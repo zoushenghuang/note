@@ -47,3 +47,92 @@ Reducer 的第一次调用时，是store自动触发的，传递的 preState(之
 ### 受控组件与非受控组件
 1. 受控组件是指其输入值由 React 组件的状态（state）进行控制的组件。在受控组件中，表单元素的值由组件的状态驱动，任何对输入值的更改都需要通过状态更新来实现。
 2. 非受控组件是指其输入值不由 React 组件的状态控制，而是通过直接操作 DOM 元素来获取输入值。通常来说，非受控组件使用 React 的 ref 来访问 DOM 元素并获取其值
+
+### Redux Toolkit 
+1. npm install @reduxjs/toolkit
+#### 使用方法
+··1 定义store.js
+  ```javascript
+  import { configureStore } from '@reduxjs/toolkit'
+
+  export const store = configureStore({
+    reducer: {},
+  })
+  ```
+..2 创建一个Redux State Slice(counterSlice文件)
+```javascript
+  import { createSlice } from '@reduxjs/toolkit'
+
+  const initialState = {
+    value: 0,
+  }
+
+  export const counterSlice = createSlice({
+    name: 'counter',
+    initialState,
+    reducers: {
+      increment: (state) => {
+        // Redux Toolkit允许我们在reducers中直接写改变state的逻辑.
+        // 由于使用了Immer库,所以并没有真的改变state
+        // 而是检测到“草稿state”的更改并根据这些更改生成一个全新的不可变state
+        state.value += 1
+      },
+      decrement: (state) => {
+        state.value -= 1
+      },
+      incrementByAmount: (state, action) => {
+        state.value += action.payload
+      },
+    },
+  })
+
+  // reducer方法的每一个case都会生成一个Action
+  export const { increment, decrement, incrementByAmount } = counterSlice.actions
+
+  export default counterSlice.reducer
+
+```
+..3 将Slice Reducers添加进Store
+```javascript
+  import { configureStore } from '@reduxjs/toolkit'
+  import counterReducer from '../features/counter/counterSlice'
+
+  export default configureStore({
+    reducer: {
+      counter: counterReducer,
+    },
+  })
+```
+..4 React中使用Redux Store 页面上调用
+```javascript
+  import { Provider } from "react-redux";
+  <Provider store={store}>
+    <App />
+  </Provider>,
+
+import { useSelector, useDispatch } from 'react-redux';
+const count = useSelector((state) => state.counter.value); //获取store中的数据
+const dispatch = useDispatch() //调用counterSlice中的方法
+dispatch(increment()) //操作
+```
+# 总结
+1、使用configureStore创建一个Redux Store
+
+configureStore接收reducer方法作为命名参数，或者说作为reducer对象的属性
+configureStore会使用默认设置自动设置好store
+
+2、在React组件中使用 Redux store
+
+用React-Redux提供的 <Provider>包裹你的<App />
+使用 <Provider store={store}>传入Redux store
+
+3、使用createSlice创建Redux “slice” reducer
+
+createSlice需要有name属性作为唯一标识，还需要初始化state和已命名的reducer方法
+Reducer方法通过使用Immer可以直接“改变”state，而不必手动做副本
+导出生成的slice reducer 和 action creators
+
+4、在React组件中使用React-Redux的useSelector/useDispatch钩子
+
+使用useSelector钩子从store中读数据
+使用useDispatch钩子获取到dispatch方法，并且根据需要dispatch actions
